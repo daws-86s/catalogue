@@ -78,7 +78,7 @@ pipeline {
             steps {
                 script{
                     
-                    sh """
+                    sh '''
                     echo "Fetching Dependabot alerts..."
 
                     response=$(curl -s \
@@ -110,7 +110,7 @@ pipeline {
                     else
                         echo "✅ No OPEN HIGH/CRITICAL Dependabot alerts found"
                     fi
-                    """
+                    '''
                     
                 }
             }
