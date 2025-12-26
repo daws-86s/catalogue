@@ -82,13 +82,13 @@ pipeline {
                     echo "Fetching Dependabot alerts..."
 
                     response=$(curl -s \
-                        -H "Authorization: token $GITHUB_TOKEN" \
+                        -H "Authorization: token ${GITHUB_TOKEN}" \
                         -H "Accept: application/vnd.github+json" \
-                        "$GITHUB_API/repos/$GITHUB_OWNER/$GITHUB_REPO/dependabot/alerts?per_page=100")
+                        "${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/dependabot/alerts?per_page=100")
 
-                    echo "$response" > dependabot_alerts.json
+                    echo "${response}" > dependabot_alerts.json
 
-                    high_critical_open_count=$(echo "$response" | jq '[.[] 
+                    high_critical_open_count=$(echo "${response}" | jq '[.[] 
                         | select(
                             .state == "open"
                             and (.security_advisory.severity == "high"
@@ -96,9 +96,9 @@ pipeline {
                         )
                     ] | length')
 
-                    echo "Open HIGH/CRITICAL Dependabot alerts: $high_critical_open_count"
+                    echo "Open HIGH/CRITICAL Dependabot alerts: ${high_critical_open_count}"
 
-                    if [ "$high_critical_open_count" -gt 0 ]; then
+                    if [ "${high_critical_open_count}" -gt 0 ]; then
                         echo "❌ Blocking pipeline due to OPEN HIGH/CRITICAL Dependabot alerts"
                         echo "Affected dependencies:"
                         echo "$response" | jq '.[] 
