@@ -67,51 +67,37 @@ pipeline {
                 }
             }
         } */
-       stage('Dependabot Security Gate') {
-            environment {
-                GITHUB_OWNER = 'daws-86s'
-                GITHUB_REPO  = 'catalogue'
-                GITHUB_API   = 'https://api.github.com'
-                GITHUB_TOKEN = credentials('GITHUB_TOKEN')
+       stage('Check Dependabot Alerts') {
+            environment { 
+                GITHUB_TOKEN = credentials('github-token')
             }
-
             steps {
-                script{
-                    
-                    sh '''
-                    echo "Fetching Dependabot alerts..."
+                script {
+                    // Fetch alerts from GitHub
+                    def response = sh(
+                        script: """
+                            curl -s -H "Accept: application/vnd.github+json" \
+                                 -H "Authorization: token ${GITHUB_TOKEN}" \
+                                 https://api.github.com/repos/daws-86s/catalogue/dependabot/alerts
+                        """,
+                        returnStdout: true
+                    ).trim()
 
-                    response=$(curl -s \
-                        -H "Authorization: token ${GITHUB_TOKEN}" \
-                        -H "Accept: application/vnd.github+json" \
-                        "${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/dependabot/alerts?per_page=100")
+                    // Parse JSON
+                    def json = readJSON text: response
 
-                    echo "${response}" > dependabot_alerts.json
+                    // Filter alerts by severity
+                    def criticalOrHigh = json.findAll { alert ->
+                        def severity = alert?.security_advisory?.severity?.toLowerCase()
+                        def state = alert?.state?.toLowerCase()
+                        return (state == "open" && (severity == "critical" || severity == "high"))
+                    }
 
-                    high_critical_open_count=$(echo "${response}" | jq '[.[] 
-                        | select(
-                            .state == "open"
-                            and (.security_advisory.severity == "high"
-                                or .security_advisory.severity == "critical")
-                        )
-                    ] | length')
-
-                    echo "Open HIGH/CRITICAL Dependabot alerts: ${high_critical_open_count}"
-
-                    if [ "${high_critical_open_count}" -gt 0 ]; then
-                        echo "❌ Blocking pipeline due to OPEN HIGH/CRITICAL Dependabot alerts"
-                        echo "Affected dependencies:"
-                        echo "$response" | jq '.[] 
-                        | select(.state=="open" 
-                        and (.security_advisory.severity=="high" 
-                        or .security_advisory.severity=="critical"))
-                        | {dependency: .dependency.package.name, severity: .security_advisory.severity, advisory: .security_advisory.summary}'
-                        exit 1
-                    else
-                        echo "✅ No OPEN HIGH/CRITICAL Dependabot alerts found"
-                    fi
-                    '''
-                    
+                    if (criticalOrHigh.size() > 0) {
+                        error "❌ Found ${criticalOrHigh.size()} HIGH/CRITICAL Dependabot alerts. Failing pipeline!"
+                    } else {
+                        echo "✅ No HIGH/CRITICAL Dependabot alerts found."
+                    }
                 }
             }
         }
