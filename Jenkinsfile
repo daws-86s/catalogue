@@ -67,27 +67,12 @@ pipeline {
                 }
             }
         }
-        stage('Build Image') {
-            steps {
-                script{
-                    withAWS(region:'us-east-1',credentials:'aws-creds') {
-                        sh """
-                            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${ACC_ID}.dkr.ecr.us-east-1.amazonaws.com
-                            docker build -t ${ACC_ID}.dkr.ecr.us-east-1.amazonaws.com/${PROJECT}/${COMPONENT}:${appVersion} .
-                            docker images
-                            docker push ${ACC_ID}.dkr.ecr.us-east-1.amazonaws.com/${PROJECT}/${COMPONENT}:${appVersion}
-                        """
-                    }
-                }
+        stage('Dependabot Security Gate') {
+            environment {
+                GITHUB_OWNER = 'daws-86s'
+                GITHUB_REPO  = 'catalogue'
+                GITHUB_API   = 'https://api.github.com/repos/daws-86s/catalogue/dependabot/alerts'
             }
-        }
-
-    stage('Dependabot Security Gate') {
-    environment {
-        GITHUB_OWNER = 'daws-86s'
-        GITHUB_REPO  = 'catalogue'
-        GITHUB_API   = 'https://api.github.com/repos/daws-86s/catalogue/dependabot/alerts'
-    }
 
         steps {
             withCredentials([string(credentialsId: 'github-dependabot-token', variable: 'GITHUB_TOKEN')]) {
@@ -125,8 +110,24 @@ pipeline {
                 fi
                 """
             }
+            }
         }
-    }
+        stage('Build Image') {
+            steps {
+                script{
+                    withAWS(region:'us-east-1',credentials:'aws-creds') {
+                        sh """
+                            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${ACC_ID}.dkr.ecr.us-east-1.amazonaws.com
+                            docker build -t ${ACC_ID}.dkr.ecr.us-east-1.amazonaws.com/${PROJECT}/${COMPONENT}:${appVersion} .
+                            docker images
+                            docker push ${ACC_ID}.dkr.ecr.us-east-1.amazonaws.com/${PROJECT}/${COMPONENT}:${appVersion}
+                        """
+                    }
+                }
+            }
+        }
+
+    
 
 }
 
