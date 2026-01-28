@@ -4,7 +4,7 @@ permissions:
   contents: read
   statuses: write
   security-events: read
-jobs:
+jobs: 
   feature-pipeline:
     if: github.ref != 'refs/head/main'
     uses: daws-86s/workflows/.github/workflows/feature-nodejs-pipeline.yaml@main
