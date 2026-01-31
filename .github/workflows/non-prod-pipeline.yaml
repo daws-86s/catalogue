@@ -21,7 +21,7 @@ permissions:
   security-events: read
 jobs: 
   non-prod-pipeline:
-    if: github.ref != 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     uses: daws-86s/workflows/.github/workflows/non-prod-pipeline.yaml@main
     with:
       version: ${{ inputs.version }}
