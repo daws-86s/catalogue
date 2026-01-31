@@ -14,4 +14,4 @@ Overall score (A–E) indicating the security quality of the code, based mainly 
 Score (A–E) representing how easy the code is to maintain, calculated from code smells and technical debt.
 
 #### Code Coverage
-Percentage of code executed by automated tests, showing how well the codebase is tested.
+Percentage of code executed by automated tests, showing how well the codebase is tested. 
